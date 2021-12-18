@@ -32,9 +32,7 @@ def distance_matrix(x, y=None, p=2):  # pairwise distance of vectors
     x = x.unsqueeze(1).expand(n, m, d)
     y = y.unsqueeze(0).expand(n, m, d)
 
-    dist = torch.pow(x - y, p).sum(2)
-
-    return dist
+    return torch.pow(x - y, p).sum(2)
 
 
 class NN():
@@ -75,10 +73,7 @@ class KNN(NN):
 
         dist = distance_matrix(x, self.train_pts, self.p) ** (1 / self.p)
 
-        knn = dist.topk(self.k, largest=False)
-
-
-        return knn
+        return dist.topk(self.k, largest=False)
 
 
 def copy_files(src, dst, ignores=[]):
@@ -155,11 +150,10 @@ class MVTecDataset(Dataset):
         tot_types = []
 
         defect_types = os.listdir(self.img_path)
-        
+
         for defect_type in defect_types:
             if defect_type == 'good':
                 img_paths = glob.glob(os.path.join(self.img_path, defect_type) + "/*.png")
-                img_tot_paths.extend(img_paths)
                 gt_tot_paths.extend([0]*len(img_paths))
                 tot_labels.extend([0]*len(img_paths))
                 tot_types.extend(['good']*len(img_paths))
@@ -168,13 +162,13 @@ class MVTecDataset(Dataset):
                 gt_paths = glob.glob(os.path.join(self.gt_path, defect_type) + "/*.png")
                 img_paths.sort()
                 gt_paths.sort()
-                img_tot_paths.extend(img_paths)
                 gt_tot_paths.extend(gt_paths)
                 tot_labels.extend([1]*len(img_paths))
                 tot_types.extend([defect_type]*len(img_paths))
 
+            img_tot_paths.extend(img_paths)
         assert len(img_tot_paths) == len(gt_tot_paths), "Something wrong with test and ground truth pair!"
-        
+
         return img_tot_paths, gt_tot_paths, tot_labels, tot_types
 
     def __len__(self):
@@ -196,8 +190,7 @@ class MVTecDataset(Dataset):
 
 
 def cvt2heatmap(gray):
-    heatmap = cv2.applyColorMap(np.uint8(gray), cv2.COLORMAP_JET)
-    return heatmap
+    return cv2.applyColorMap(np.uint8(gray), cv2.COLORMAP_JET)
 
 def heatmap_on_image(heatmap, image):
     if heatmap.shape != image.shape:
@@ -301,13 +294,13 @@ class STPM(pl.LightningModule):
 
     def train_dataloader(self):
         image_datasets = MVTecDataset(root=os.path.join(args.dataset_path,args.category), transform=self.data_transforms, gt_transform=self.gt_transforms, phase='train')
-        train_loader = DataLoader(image_datasets, batch_size=args.batch_size, shuffle=True, num_workers=0) #, pin_memory=True)
-        return train_loader
+        return DataLoader(
+            image_datasets, batch_size=args.batch_size, shuffle=True, num_workers=0
+        )
 
     def test_dataloader(self):
         test_datasets = MVTecDataset(root=os.path.join(args.dataset_path,args.category), transform=self.data_transforms, gt_transform=self.gt_transforms, phase='test')
-        test_loader = DataLoader(test_datasets, batch_size=1, shuffle=False, num_workers=0) #, pin_memory=True) # only work on batch_size=1, now.
-        return test_loader
+        return DataLoader(test_datasets, batch_size=1, shuffle=False, num_workers=0)
 
     def configure_optimizers(self):
         return None
@@ -423,8 +416,7 @@ def get_args():
     parser.add_argument('--save_src_code', default=True)
     parser.add_argument('--save_anomaly_map', default=True)
     parser.add_argument('--n_neighbors', type=int, default=9)
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 if __name__ == '__main__':
 
